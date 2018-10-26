@@ -28,7 +28,6 @@ github.com/mattn/goveralls v0.0.2/go.mod h1:8d1ZMHsd7fW6IRPKQh46F2WRpyib5/X4FOpe
 github.com/mdempsky/unconvert v0.0.0-20180703203632-1a9a0a0a3594/go.mod h1:G+0b7u4CERC4XI25lR40h0NhLMGQkht7QKGqzh45VoY=
 github.com/mibk/dupl v1.0.0/go.mod h1:pCr4pNxxIbFGvtyCOi0c7LVjmV6duhKWV+ex5vh38ME=
 github.com/mitchellh/mapstructure v0.0.0-20170523030023-d0303fe80992/go.mod h1:FVVH3fgwuzCH5S8UJGiWEs2h04kUh9fWfEaFds41c1Y=
-github.com/mongodb/mongo-go-driver v0.0.0-20181024173047-e763e207f402/go.mod h1:NK/HWDIIZkaYsnYa0hmtP443T5ELr0KDecmIioVuuyU=
 github.com/opennota/check v0.0.0-20180904223316-54af402956c9/go.mod h1:tydB+MZxWpY8M/NRu7jQhND/mXuLAPsKcSV6JkzofsA=
 github.com/pelletier/go-toml v0.0.0-20170628012637-69d355db5304/go.mod h1:5z9KED0ma1S8pY6P1sdut58dfprrGBbd/94hg7ilaic=
 github.com/spf13/afero v0.0.0-20170217164146-9be650865eab/go.mod h1:j4pytiNVoe2o6bmDsKpLACNPDBIoEAkihy7loJ1B0CQ=
