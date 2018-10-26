@@ -118,13 +118,9 @@ func handlAPI(w http.ResponseWriter, r *http.Request) {
 func handlAPItrack(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
-		//check if we have any data yet.
-		if len(trackInfo) == 0 {
-			errorHandler(w, http.StatusNoContent, "No tracks registered yet.")
-			return
-		}
-		//store all IDs in a list
-		var ids []string
+		//store all IDs in a list. Allows empty json slice.
+		ids := make([]string, 0)
+
 		for i := 0; i < len(trackInfo); i++ {
 			ids = append(ids, trackInfo[i].UniqueID)
 		}
@@ -266,6 +262,14 @@ func handlAPItrackIDfield(w http.ResponseWriter, r *http.Request) {
 	}
 	//we did not find any matches
 	w.WriteHeader(http.StatusNotFound)
+}
+
+func handlAPIticker(w http.ResponseWriter, r *http.Request) {
+
+}
+
+func handlAPItickerLatest(w http.ResponseWriter, r *http.Request) {
+
 }
 
 //mariusz is a slightly modified version of the code found in the readme of github.com/marni/goigc

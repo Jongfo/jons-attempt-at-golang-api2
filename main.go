@@ -9,9 +9,7 @@ import (
 )
 
 var startTime time.Time
-
-//locally stored tracks. Depricated
-//var registeredTracks []igc.Track
+var db MongoDB
 
 //trackInfo is a slice for all the tracks
 var trackInfo []TrackData
@@ -22,6 +20,9 @@ func init() {
 }
 
 func main() {
+	db = MongoDB{"mongodb://jongfo:the1kuk@ds135156.mlab.com:35156/joncloudtech", "joncloudtech", "trackcollection"}
+	db.Init()
+
 	//find our port
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -31,11 +32,13 @@ func main() {
 	//all our paths using gorilla mux
 	r := mux.NewRouter()
 	r.HandleFunc("/", handl404)
+
 	r.HandleFunc("/paragliding", redirAPI)
 	r.HandleFunc("/paragliding/api", handlAPI)
 	r.HandleFunc("/paragliding/api/track", handlAPItrack)
 	r.HandleFunc("/paragliding/api/track/{ID}", handlAPItrackID)
 	r.HandleFunc("/paragliding/api/track/{ID}/{field}", handlAPItrackIDfield)
+	r.HandleFunc("/paragliding/api/ticker", handlAPIticker)
 
 	//serve our functionallity
 	http.Handle("/", r)
