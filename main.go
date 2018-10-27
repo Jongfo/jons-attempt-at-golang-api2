@@ -9,7 +9,9 @@ import (
 )
 
 var startTime time.Time
+var baseTime time.Time
 var db MongoDB
+var idCap int
 
 //trackInfo is a slice for all the tracks
 var trackInfo []TrackData
@@ -17,6 +19,8 @@ var trackInfo []TrackData
 func init() {
 	//make a timestamp for uptime.
 	startTime = time.Now()
+	baseTime = time.Date(2010, time.November, 10, 23, 0, 0, 0, time.UTC)
+	idCap = 1
 }
 
 func main() {
@@ -32,13 +36,17 @@ func main() {
 	//all our paths using gorilla mux
 	r := mux.NewRouter()
 	r.HandleFunc("/", handl404)
-
+	//"/{route:route\\/?}"
 	r.HandleFunc("/paragliding", redirAPI)
-	r.HandleFunc("/paragliding/api", handlAPI)
+	r.HandleFunc("/paragliding/{api:api\\/?}", handlAPI)
 	r.HandleFunc("/paragliding/api/track", handlAPItrack)
 	r.HandleFunc("/paragliding/api/track/{ID}", handlAPItrackID)
 	r.HandleFunc("/paragliding/api/track/{ID}/{field}", handlAPItrackIDfield)
 	r.HandleFunc("/paragliding/api/ticker", handlAPIticker)
+	r.HandleFunc("/paragliding/api/ticker/latest", handlAPItickerLatest)
+	r.HandleFunc("/paragliding/api/ticker/{stamp}", handlAPItickerStamp)
+	//	r.HandleFunc("/paragliding/api/webhook/new_track", handlAPIwebhookNT)
+	//	r.HandleFunc("/paragliding/api/webhook/new_track/{WHID}", handlAPIwebhookNT)
 
 	//serve our functionallity
 	http.Handle("/", r)

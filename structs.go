@@ -10,6 +10,7 @@ import (
 type TrackData struct {
 	igc.Track //"inherit from igc package"
 	url       string
+	timestamp int64
 }
 
 //-------json type structs------
@@ -39,4 +40,13 @@ type IDdata struct {
 	GliderID    string    `json:"glider_id"`     //<glider_id>,
 	TrackLength float64   `json:"track_length"`  //<calculated total track length>
 	TrackURL    string    `json:"track_src_url"` //<the original URL used to upload the track>
+}
+
+//TickerData contains metadata about request and 5 track IDs.
+type TickerData struct {
+	TLatest    int64    `json:"t_latest"`   //<latest added timestamp>,
+	TStart     int64    `json:"t_start"`    //<the first timestamp of the added track>, this will be the oldest track recorded
+	TStop      int64    `json:"t_stop"`     //<the last timestamp of the added track>, this might equal to t_latest if there are no more tracks left
+	TrackIDs   []string `json:"tracks"`     //[<id1>, <id2>, ...] cap at 5
+	Processing int64    `json:"processing"` //<time in ms of how long it took to process the request>
 }

@@ -22,13 +22,13 @@ It is of the form:
 	"age": <value>		e.g. 21
 	"studentid": <value>		e.c. "id0"
 }
-*/
 type Student struct {
 	ID        bson.ObjectId `bson:"_id,omitempty"`
 	Name      string        `json:"name"`
 	Age       int           `json:"age"`
 	StudentID string        `json:"studentid"`
 }
+*/
 
 /*
 Init initializes the mongo storage.
@@ -41,7 +41,7 @@ func (db *MongoDB) Init() {
 	defer session.Close()
 
 	index := mgo.Index{
-		Key:        []string{"studentid"},
+		Key:        []string{"trackid"},
 		Unique:     true,
 		DropDups:   true,
 		Background: true,
@@ -55,9 +55,9 @@ func (db *MongoDB) Init() {
 }
 
 /*
-Add adds new students to the storage.
+Add adds new track to the storage.
 */
-func (db *MongoDB) Add(s Student) error {
+func (db *MongoDB) Add(s TrackData) error {
 	session, err := mgo.Dial(db.DatabaseURL)
 	if err != nil {
 		panic(err)
@@ -75,7 +75,7 @@ func (db *MongoDB) Add(s Student) error {
 }
 
 /*
-Count returns the current count of the students in in-memory storage.
+Count returns the current count of the tracks in in-memory storage.
 */
 func (db *MongoDB) Count() int {
 	session, err := mgo.Dial(db.DatabaseURL)
@@ -95,41 +95,41 @@ func (db *MongoDB) Count() int {
 }
 
 /*
-Get returns a student with a given ID or empty student struct.
+Get returns a track with a given ID or empty track struct.
 */
-func (db *MongoDB) Get(keyID string) (Student, bool) {
+func (db *MongoDB) Get(keyID string) (TrackData, bool) {
 	session, err := mgo.Dial(db.DatabaseURL)
 	if err != nil {
 		panic(err)
 	}
 	defer session.Close()
 
-	student := Student{}
+	track := TrackData{}
 	allWasGood := true
 
-	err = session.DB(db.DatabaseName).C(db.CollectionName).Find(bson.M{"studentid": keyID}).One(&student)
+	err = session.DB(db.DatabaseName).C(db.CollectionName).Find(bson.M{"trackid": keyID}).One(&track)
 	if err != nil {
 		allWasGood = false
 	}
 
-	return student, allWasGood
+	return track, allWasGood
 }
 
 /*
-GetAll returns a slice with all the students.
+GetAll returns a slice with all the tracks.
 */
-func (db *MongoDB) GetAll() []Student {
+func (db *MongoDB) GetAll() []TrackData {
 	session, err := mgo.Dial(db.DatabaseURL)
 	if err != nil {
 		panic(err)
 	}
 	defer session.Close()
 
-	var all []Student
+	var all []TrackData
 
 	err = session.DB(db.DatabaseName).C(db.CollectionName).Find(bson.M{}).All(&all)
 	if err != nil {
-		return []Student{}
+		return []TrackData{}
 	}
 
 	return all
