@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -69,7 +70,7 @@ func handlAPItrack(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
 			w.Write(js)
 		}
-	case "POST": //TODO: fix for new TrackData
+	case "POST": //TODO: webhook check
 		//make decoder for our POST body
 		decoder := json.NewDecoder(r.Body)
 		var url PostURL
@@ -117,6 +118,8 @@ func handlAPItrack(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(js)
 
+		//webhook
+		webhookPush()
 	default:
 		//unexpected request
 		str := fmt.Sprintf("Sorry, only GET and POST methods are supported.")
@@ -230,7 +233,7 @@ func handlAPIticker(w http.ResponseWriter, r *http.Request) {
 		trackInfo[0].timestamp,                //earliest
 		tStop,                                 //last of ids
 		ids,                                   //slice of UniqueID
-		int64(time.Since(tNow).Nanoseconds()), //request time
+		time.Since(tNow).Nanoseconds(),        //request time
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -285,7 +288,7 @@ func handlAPItickerStamp(w http.ResponseWriter, r *http.Request) {
 		trackInfo[0].timestamp,                //earliest
 		tStop,                                 //last of ids
 		ids,                                   //slice of UniqueID
-		int64(time.Since(tNow).Nanoseconds()), //request time
+		time.Since(tNow).Nanoseconds(),        //request time
 	}
 
 	//write json data to body
@@ -295,4 +298,72 @@ func handlAPItickerStamp(w http.ResponseWriter, r *http.Request) {
 		errorHandler(w, http.StatusInternalServerError, "json encode error")
 		return
 	}
+}
+
+//Webhook hendlers
+
+func handlAPIwebhookNT(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case "POST":
+		//Read request body
+		decoder := json.NewDecoder(r.Body)
+		var whData Webhookjson
+		err := decoder.Decode(&whData)
+		if err != nil {
+			errorHandler(w, http.StatusInternalServerError, "Failed Decoding request")
+			return
+		}
+
+		//prosses request
+		if whData.MinTriggerValue <= 0 {
+			fmt.Println("Min value not given") //debug
+			whData.MinTriggerValue = 1
+		}
+		whID := timestampNow()
+		webhookInfo = append(webhookInfo, WebhookData{whData, whID, whID})
+
+		encoder := json.NewEncoder(w)
+
+		//reply
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(201)
+		encoder.Encode(fmt.Sprintf("%d", whID))
+	default:
+		errorHandler(w, http.StatusBadRequest, "Expected POST request")
+	}
+	return
+}
+
+func handlAPIwebhookID(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	//look for match
+	if r.Method != "GET" && r.Method != "DELETE" {
+		errorHandler(w, http.StatusBadRequest, "Expected GET or DELETE request")
+		return
+	}
+	for i := 0; i < len(webhookInfo); i++ {
+		if fmt.Sprintf("%d", webhookInfo[i].ID) == vars["WHID"] {
+			//send response
+			encoder := json.NewEncoder(w)
+			w.Header().Set("Content-Type", "application/json")
+			if encoder.Encode(webhookInfo[i].Webhookjson) != nil {
+				errorHandler(w, http.StatusInternalServerError, "json encode error")
+			}
+			if r.Method == "DELETE" {
+				//length := len(webhookInfo)
+				var newSlice []WebhookData
+				for j := 0; j < len(webhookInfo); j++ {
+					if j != i {
+						newSlice = append(newSlice, webhookInfo[j])
+					}
+				}
+				log.Printf("We deleted webhook ID:%d", webhookInfo[i].ID)
+				webhookInfo = newSlice
+			}
+			return
+		}
+
+	}
+	//not found
+	errorHandler(w, http.StatusNotFound, "We did not find any match")
 }

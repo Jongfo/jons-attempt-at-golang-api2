@@ -13,7 +13,20 @@ type TrackData struct {
 	timestamp int64
 }
 
+//WebhookData contains aditional information about a webhook
+type WebhookData struct {
+	Webhookjson
+	ID   int64 //timestamp of when the webhook was made
+	Stop int64 //timestamp of the last gotten track
+}
+
 //-------json type structs------
+
+//Webhookjson holds data of a webhook
+type Webhookjson struct {
+	WebhookURL      string `json:"webhookURL"`
+	MinTriggerValue int    `json:"minTriggerValue"`
+}
 
 //Service contains data about our service
 type Service struct {
@@ -48,5 +61,5 @@ type TickerData struct {
 	TStart     int64    `json:"t_start"`    //<the first timestamp of the added track>, this will be the oldest track recorded
 	TStop      int64    `json:"t_stop"`     //<the last timestamp of the added track>, this might equal to t_latest if there are no more tracks left
 	TrackIDs   []string `json:"tracks"`     //[<id1>, <id2>, ...] cap at 5
-	Processing int64    `json:"processing"` //<time in ms of how long it took to process the request>
+	Processing int64    `json:"processing"` //<time in ns of how long it took to process the request>
 }

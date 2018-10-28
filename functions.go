@@ -1,9 +1,12 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	igc "github.com/marni/goigc"
@@ -77,4 +80,69 @@ func diff(a, b time.Time) (year, month, day, hour, min, sec int) {
 	}
 
 	return
+}
+
+func webhookPush() {
+	//Go through all webhook
+	for i := 0; i < len(webhookInfo); i++ {
+		//check if number of new tracks >= webhook.mincap
+		count := 0
+		for j := 0; j < len(trackInfo); j++ {
+			if trackInfo[j].timestamp > webhookInfo[i].Stop {
+				count++
+				if count >= webhookInfo[i].MinTriggerValue {
+					fmt.Println("webhook POST")
+					webhookInfo[i].Stop = trackInfo[j].timestamp
+
+					var trids []string
+					for k := 1; k <= count; k++ {
+						trids = append(trids, trackInfo[j-count+k].UniqueID)
+					}
+
+					//Prepare message
+					message := map[string]interface{}{
+						//TODO: add prosessing time
+						"content": fmt.Sprintf("Wow! New track was added!\nTimestamp: %d, New tracks: %+v", webhookInfo[i].Stop, trids),
+					}
+					count = 0
+
+					bytesRepresentation, err := json.Marshal(message)
+					if err != nil {
+						log.Fatalln(err)
+					}
+
+					//send POST via url
+					http.Post(webhookInfo[i].WebhookURL, "application/json", bytes.NewBuffer(bytesRepresentation))
+				}
+			}
+		}
+	}
+
+}
+
+func clockticker() {
+	//make a ticker that runs every x minutes
+	ticker := time.NewTicker(10 * time.Second)
+	quit := make(chan struct{})
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				//Prepare message
+				message := map[string]interface{}{
+					"text": fmt.Sprintf("10 sec clock!"),
+				}
+				bytesRepresentation, err := json.Marshal(message)
+				if err != nil {
+					log.Fatalln(err)
+				}
+				//send POST via url
+				http.Post(os.Getenv("CLOUDCLOCKHOOK"), "application/json", bytes.NewBuffer(bytesRepresentation))
+				// do stuff
+			case <-quit:
+				ticker.Stop()
+				return
+			}
+		}
+	}()
 }
