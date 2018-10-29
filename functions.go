@@ -88,11 +88,11 @@ func webhookPush() {
 		//check if number of new tracks >= webhook.mincap
 		count := 0
 		for j := 0; j < len(trackInfo); j++ {
-			if trackInfo[j].timestamp > webhookInfo[i].Stop {
+			if trackInfo[j].Timestamp > webhookInfo[i].Stop {
 				count++
 				if count >= webhookInfo[i].MinTriggerValue {
 					fmt.Println("webhook POST")
-					webhookInfo[i].Stop = trackInfo[j].timestamp
+					webhookInfo[i].Stop = trackInfo[j].Timestamp
 
 					var trids []string
 					for k := 1; k <= count; k++ {
@@ -102,7 +102,7 @@ func webhookPush() {
 					//Prepare message
 					message := map[string]interface{}{
 						//TODO: add prosessing time
-						"content": fmt.Sprintf("Wow! New track was added!\nTimestamp: %d, New tracks: %+v", webhookInfo[i].Stop, trids),
+						"text": fmt.Sprintf("Wow! New track was added!\nTimestamp: %d, New tracks: %+v", webhookInfo[i].Stop, trids),
 					}
 					count = 0
 
@@ -126,7 +126,7 @@ func clockbool(z int64, x []TrackData, index int) bool {
 	if index < 0 {
 		return false
 	}
-	return z < x[index].timestamp
+	return z < x[index].Timestamp
 }
 
 //make a ticker that runs every x minutes. POST to env var url
@@ -134,19 +134,19 @@ func clockticker() {
 	//TODO: make data meaningful
 	var lastTrackStamp int64
 	if len(trackInfo) > 0 {
-		lastTrackStamp = trackInfo[len(trackInfo)-1].timestamp
+		lastTrackStamp = trackInfo[len(trackInfo)-1].Timestamp
 	} else {
 		lastTrackStamp = 0
 	}
 
-	ticker := time.NewTicker(10 * time.Second)
+	ticker := time.NewTicker(30 * time.Second)
 	quit := make(chan struct{})
 	go func() {
 		for {
 			select {
 			case <-ticker.C:
 				if len(trackInfo) > 0 {
-					if lastTrackStamp < trackInfo[len(trackInfo)-1].timestamp {
+					if lastTrackStamp < trackInfo[len(trackInfo)-1].Timestamp {
 						var trids []string
 						//adds latest tracks to slice
 						for i := len(trackInfo) - 1; clockbool(lastTrackStamp, trackInfo, i); i-- {
@@ -154,7 +154,7 @@ func clockticker() {
 						}
 						//invert slice for cronological order.
 						for i, j := 0, len(trids)-1; i < j; i, j = i+1, j-1 {
-							log.Printf("i: %d, j: %d", i, j)
+							//log.Printf("i: %d, j: %d", i, j)
 							trids[i], trids[j] = trids[j], trids[i]
 						}
 						//Prepare message
@@ -167,7 +167,7 @@ func clockticker() {
 						}
 						//send POST via url
 						http.Post(os.Getenv("CLOUDCLOCKHOOK"), "application/json", bytes.NewBuffer(bytesRepresentation))
-						lastTrackStamp = trackInfo[len(trackInfo)-len(trids)].timestamp
+						lastTrackStamp = trackInfo[len(trackInfo)-len(trids)+1].Timestamp
 					}
 				}
 			case <-quit:

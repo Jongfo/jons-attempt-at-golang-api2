@@ -2,22 +2,32 @@ package main
 
 import (
 	"time"
-
-	igc "github.com/marni/goigc"
 )
+
+/*
+type TrackData struct {
+	igc.Track        //"inherit from igc package"
+	URL       string `json:"url"`
+	Timestamp int64  `json:"timestamp"`
+}*/
 
 //TrackData contains all the relevant information about a track
 type TrackData struct {
-	igc.Track //"inherit from igc package"
-	url       string
-	timestamp int64
+	UniqueID      string    `json:"uniqueid"`
+	Date          time.Time `json:"date"`
+	Pilot         string    `json:"pilot"`
+	GliderType    string    `json:"glidertype"`
+	GliderID      string    `json:"gliderid"`
+	TotalDistance float64   `json:"totaldistance"`
+	URL           string    `json:"url"`
+	Timestamp     int64     `json:"timestamp"`
 }
 
 //WebhookData contains aditional information about a webhook
 type WebhookData struct {
 	Webhookjson
-	ID   int64 //timestamp of when the webhook was made
-	Stop int64 //timestamp of the last gotten track
+	ID   int64 `json:"timestamp"` //timestamp of when the webhook was made
+	Stop int64 `json:"stop"`      //timestamp of the last gotten track
 }
 
 //-------json type structs------

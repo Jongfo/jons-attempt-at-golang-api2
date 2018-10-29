@@ -112,7 +112,20 @@ func handlAPItrack(w http.ResponseWriter, r *http.Request) {
 
 		//adds track to global slice
 		//registeredTracks = append(registeredTracks, track)
-		trackInfo = append(trackInfo, TrackData{track, url.URL, timestampNow()})
+		newTrack := TrackData{track.UniqueID,
+			track.Date,
+			track.Pilot,
+			track.GliderType,
+			track.GliderID,
+			trackDistance(track),
+			url.URL,
+			timestampNow(),
+		}
+		trackInfo = append(trackInfo, newTrack)
+		if err := dbTrack.AddTrack(newTrack); err != nil {
+			log.Fatal("Unable to add new track")
+			//TODO: Not use Fatal
+		}
 
 		//we did everything correctly, hopefully
 		w.Header().Set("Content-Type", "application/json")
@@ -135,18 +148,14 @@ func handlAPItrackID(w http.ResponseWriter, r *http.Request) {
 	//goes throug and looks for matching ID
 	for i := 0; i < len(trackInfo); i++ {
 		if trackInfo[i].UniqueID == vars["ID"] {
-
-			//calculates rough distance
-			totalDistance := trackDistance(trackInfo[i].Track)
-
 			//struct to be marshaled and sendt as json
 			data := IDdata{
-				trackInfo[i].Date,       //Date from File Header, H-record
-				trackInfo[i].Pilot,      //Pilot name
-				trackInfo[i].GliderType, //Glider type
-				trackInfo[i].GliderID,   //Glider ID
-				totalDistance,           //Calculated total track length
-				trackInfo[i].url,
+				trackInfo[i].Date,          //Date from File Header, H-record
+				trackInfo[i].Pilot,         //Pilot name
+				trackInfo[i].GliderType,    //Glider type
+				trackInfo[i].GliderID,      //Glider ID
+				trackInfo[i].TotalDistance, //Calculated total track length
+				trackInfo[i].URL,
 			}
 
 			//make the json struct
@@ -188,11 +197,11 @@ func handlAPItrackIDfield(w http.ResponseWriter, r *http.Request) {
 			case "glider_id":
 				fmt.Fprint(w, trackInfo[i].GliderID)
 			case "track_length":
-				fmt.Fprint(w, trackDistance(trackInfo[i].Track))
+				fmt.Fprint(w, trackInfo[i].TotalDistance)
 			case "H_date":
 				fmt.Fprint(w, trackInfo[i].Date)
 			case "track_src_url":
-				fmt.Fprint(w, trackInfo[i].url)
+				fmt.Fprint(w, trackInfo[i].URL)
 			default:
 				//last field does not match or not implemented yet.
 				w.WriteHeader(http.StatusNotFound)
@@ -208,7 +217,7 @@ func handlAPItrackIDfield(w http.ResponseWriter, r *http.Request) {
 func handlAPItickerLatest(w http.ResponseWriter, r *http.Request) {
 	if len(trackInfo) > 0 {
 		w.Header().Set("Content-Type", "text/plain")
-		fmt.Fprint(w, trackInfo[len(trackInfo)-1].timestamp)
+		fmt.Fprint(w, trackInfo[len(trackInfo)-1].Timestamp)
 	} else {
 		w.WriteHeader(http.StatusInternalServerError)
 	}
@@ -226,13 +235,13 @@ func handlAPIticker(w http.ResponseWriter, r *http.Request) {
 	var tStop int64
 	for i := 0; i < len(trackInfo) && i < idCap; i++ {
 		ids = append(ids, trackInfo[i].UniqueID)
-		tStop = trackInfo[i].timestamp
+		tStop = trackInfo[i].Timestamp
 	}
 	encoder := json.NewEncoder(w)
 
 	jsun := TickerData{
-		trackInfo[len(trackInfo)-1].timestamp, //latest
-		trackInfo[0].timestamp,                //earliest
+		trackInfo[len(trackInfo)-1].Timestamp, //latest
+		trackInfo[0].Timestamp,                //earliest
 		tStop,                                 //last of ids
 		ids,                                   //slice of UniqueID
 		time.Since(tNow).Nanoseconds(),        //request time
@@ -266,7 +275,7 @@ func handlAPItickerStamp(w http.ResponseWriter, r *http.Request) {
 
 	//look for timestamp
 	for i := 0; i < len(trackInfo); i++ {
-		if trackInfo[i].timestamp == stamp {
+		if trackInfo[i].Timestamp == stamp {
 			index = i
 		}
 	}
@@ -281,13 +290,13 @@ func handlAPItickerStamp(w http.ResponseWriter, r *http.Request) {
 	var tStop int64
 	for i := index + 1; i < len(trackInfo) && i < idCap+index+1; i++ {
 		ids = append(ids, trackInfo[i].UniqueID)
-		tStop = trackInfo[i].timestamp
+		tStop = trackInfo[i].Timestamp
 	}
 	encoder := json.NewEncoder(w)
 
 	jsun := TickerData{
-		trackInfo[len(trackInfo)-1].timestamp, //latest
-		trackInfo[0].timestamp,                //earliest
+		trackInfo[len(trackInfo)-1].Timestamp, //latest
+		trackInfo[0].Timestamp,                //earliest
 		tStop,                                 //last of ids
 		ids,                                   //slice of UniqueID
 		time.Since(tNow).Nanoseconds(),        //request time
@@ -323,6 +332,10 @@ func handlAPIwebhookNT(w http.ResponseWriter, r *http.Request) {
 		}
 		whID := timestampNow()
 		webhookInfo = append(webhookInfo, WebhookData{whData, whID, whID})
+		if err := dbWebhook.AddHook(WebhookData{whData, whID, whID}); err != nil {
+			log.Fatal("Unable to add new track")
+			//TODO: Not use Fatal
+		}
 
 		encoder := json.NewEncoder(w)
 
@@ -359,12 +372,57 @@ func handlAPIwebhookID(w http.ResponseWriter, r *http.Request) {
 						newSlice = append(newSlice, webhookInfo[j])
 					}
 				}
-				log.Printf("We deleted webhook ID:%d", webhookInfo[i].ID)
-				webhookInfo = newSlice
+				//TODO: Delete webhook from database
+				if dbWebhook.DeleteID("id", webhookInfo[i].ID) {
+					log.Printf("We deleted webhook ID:%d", webhookInfo[i].ID)
+					webhookInfo = newSlice
+				} else {
+					errorHandler(w, http.StatusInternalServerError, "Database deletion error")
+				}
 			}
 			return
 		}
 	}
 	//not found
 	errorHandler(w, http.StatusNotFound, "We did not find any match")
+}
+
+//api for administrator
+func handlAdmin(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	switch vars["req"] {
+	case "tracks_count":
+		fmt.Fprintf(w, "There is currently %d tracks saved in the database and %d tracks in local memory.", dbTrack.Count(), len(trackInfo))
+		return
+	case "tracks":
+		if r.Method == "DELETE" {
+			if dbTrack.DeleteAll() {
+				log.Print("Admin: Delete all tracks succeeded")
+				fmt.Fprint(w, "Admin: Delete all tracks succeeded")
+				trackInfo = []TrackData{}
+			} else {
+				log.Print("Admin: Could not delete all tracks")
+				fmt.Fprint(w, "Admin: Could not delete all tracks")
+			}
+			return
+		}
+	case "webhooks_count":
+		fmt.Fprintf(w, "There is currently %d webhooks saved in the database and %d webhooks in local memory.", dbWebhook.Count(), len(webhookInfo))
+		return
+	case "webhooks":
+		if r.Method == "DELETE" {
+			if dbWebhook.DeleteAll() {
+				log.Print("Admin: Delete all webhooks succeeded")
+				fmt.Fprint(w, "Admin: Delete all webhooks succeeded")
+				trackInfo = []TrackData{}
+			} else {
+				log.Print("Admin: Could not delete all webhooks")
+				fmt.Fprint(w, "Admin: Could not delete all webhooks")
+			}
+			return
+		}
+	}
+	//pretend like nothing happened
+	w.WriteHeader(http.StatusNotFound)
+	fmt.Fprintln(w, "404 page not found")
 }
