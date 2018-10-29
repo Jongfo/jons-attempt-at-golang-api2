@@ -191,6 +191,8 @@ func handlAPItrackIDfield(w http.ResponseWriter, r *http.Request) {
 				fmt.Fprint(w, trackDistance(trackInfo[i].Track))
 			case "H_date":
 				fmt.Fprint(w, trackInfo[i].Date)
+			case "track_src_url":
+				fmt.Fprint(w, trackInfo[i].url)
 			default:
 				//last field does not match or not implemented yet.
 				w.WriteHeader(http.StatusNotFound)
@@ -362,7 +364,6 @@ func handlAPIwebhookID(w http.ResponseWriter, r *http.Request) {
 			}
 			return
 		}
-
 	}
 	//not found
 	errorHandler(w, http.StatusNotFound, "We did not find any match")

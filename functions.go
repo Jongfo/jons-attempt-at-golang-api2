@@ -120,25 +120,56 @@ func webhookPush() {
 
 }
 
+//help function for clockticker(). No; this is not good practice.
+//checks if z is less than x[index].timestamp and that index is not less than zero
+func clockbool(z int64, x []TrackData, index int) bool {
+	if index < 0 {
+		return false
+	}
+	return z < x[index].timestamp
+}
+
+//make a ticker that runs every x minutes. POST to env var url
 func clockticker() {
-	//make a ticker that runs every x minutes
+	//TODO: make data meaningful
+	var lastTrackStamp int64
+	if len(trackInfo) > 0 {
+		lastTrackStamp = trackInfo[len(trackInfo)-1].timestamp
+	} else {
+		lastTrackStamp = 0
+	}
+
 	ticker := time.NewTicker(10 * time.Second)
 	quit := make(chan struct{})
 	go func() {
 		for {
 			select {
 			case <-ticker.C:
-				//Prepare message
-				message := map[string]interface{}{
-					"text": fmt.Sprintf("10 sec clock!"),
+				if len(trackInfo) > 0 {
+					if lastTrackStamp < trackInfo[len(trackInfo)-1].timestamp {
+						var trids []string
+						//adds latest tracks to slice
+						for i := len(trackInfo) - 1; clockbool(lastTrackStamp, trackInfo, i); i-- {
+							trids = append(trids, trackInfo[i].UniqueID)
+						}
+						//invert slice for cronological order.
+						for i, j := 0, len(trids)-1; i < j; i, j = i+1, j-1 {
+							log.Printf("i: %d, j: %d", i, j)
+							trids[i], trids[j] = trids[j], trids[i]
+						}
+						//Prepare message
+						message := map[string]interface{}{
+							"text": fmt.Sprintf("New tracks: %+v", trids),
+						}
+						bytesRepresentation, err := json.Marshal(message)
+						if err != nil {
+							log.Fatalln(err)
+						}
+						//send POST via url
+						http.Post(os.Getenv("CLOUDCLOCKHOOK"), "application/json", bytes.NewBuffer(bytesRepresentation))
+						lastTrackStamp = trackInfo[len(trackInfo)-len(trids)].timestamp
+					}
 				}
-				bytesRepresentation, err := json.Marshal(message)
-				if err != nil {
-					log.Fatalln(err)
-				}
-				//send POST via url
-				http.Post(os.Getenv("CLOUDCLOCKHOOK"), "application/json", bytes.NewBuffer(bytesRepresentation))
-				// do stuff
 			case <-quit:
 				ticker.Stop()
 				return
