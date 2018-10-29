@@ -19,7 +19,6 @@ func timestampNow() int64 {
 
 //errorHandler is a simple self made function to deal with bad requests
 func errorHandler(w http.ResponseWriter, code int, mes string) {
-	w.WriteHeader(code)
 	http.Error(w, http.StatusText(code), code)
 	fmt.Fprint(w, mes)
 	log.Print(mes)
@@ -91,7 +90,7 @@ func webhookPush() {
 			if trackInfo[j].Timestamp > webhookInfo[i].Stop {
 				count++
 				if count >= webhookInfo[i].MinTriggerValue {
-					fmt.Println("webhook POST")
+					//fmt.Println("webhook POST")
 					webhookInfo[i].Stop = trackInfo[j].Timestamp
 
 					var trids []string
@@ -117,7 +116,6 @@ func webhookPush() {
 			}
 		}
 	}
-
 }
 
 //help function for clockticker(). No; this is not good practice.
@@ -145,13 +143,13 @@ func clockticker() {
 		for {
 			select {
 			case <-ticker.C:
-				if len(trackInfo) > 0 {
-					if lastTrackStamp < trackInfo[len(trackInfo)-1].Timestamp {
-						var trids []string
-						//adds latest tracks to slice
-						for i := len(trackInfo) - 1; clockbool(lastTrackStamp, trackInfo, i); i-- {
-							trids = append(trids, trackInfo[i].UniqueID)
-						}
+				if len(trackInfo) > 0 && lastTrackStamp < trackInfo[len(trackInfo)-1].Timestamp {
+					var trids []string
+					//adds latest tracks to slice
+					for i := len(trackInfo) - 1; clockbool(lastTrackStamp, trackInfo, i); i-- {
+						trids = append(trids, trackInfo[i].UniqueID)
+					}
+					if len(trids) > 0 {
 						//invert slice for cronological order.
 						for i, j := 0, len(trids)-1; i < j; i, j = i+1, j-1 {
 							//log.Printf("i: %d, j: %d", i, j)
@@ -167,7 +165,8 @@ func clockticker() {
 						}
 						//send POST via url
 						http.Post(os.Getenv("CLOUDCLOCKHOOK"), "application/json", bytes.NewBuffer(bytesRepresentation))
-						lastTrackStamp = trackInfo[len(trackInfo)-len(trids)+1].Timestamp
+						//fmt.Printf("%d - %d = %d", len(trackInfo), len(trids), len(trackInfo)-len(trids))
+						lastTrackStamp = trackInfo[len(trackInfo)-1].Timestamp
 					}
 				}
 			case <-quit:

@@ -5,6 +5,13 @@ Project uses go modules. dependecies will be fetched on `go build`
 
 Project uses optional environmental variables for some functionality.
 
+All webhooks use slack format. You can use discord webhooks by appending `/slack` at the end of the webhook url.
+
+
+##Heroku link
+https://intense-bayou-18912.herokuapp.com/paragliding/api
+
+
 ##Environmental vriables
 * `CLOUDCLOCKHOOK`: webhook link to slack webhook handler or slack compatible handler(Discord). unset or set to empty string to disable.
 * `CLOUDCAP`: Default to 5 if unset. Changes the amount of track IDs returned for `/api/ticker`.

@@ -226,6 +226,7 @@ func handlAPItickerLatest(w http.ResponseWriter, r *http.Request) {
 //writes a json with timestamps and IDs
 func handlAPIticker(w http.ResponseWriter, r *http.Request) {
 	tNow := time.Now()
+	trackInfo = dbTrack.GetAllTracks()
 	//Check if no tracks have been added.
 	if len(trackInfo) <= 0 {
 		errorHandler(w, http.StatusSeeOther, "No tracks have been added yet.")
@@ -258,6 +259,7 @@ func handlAPIticker(w http.ResponseWriter, r *http.Request) {
 //writes a json with timestamps and IDs
 func handlAPItickerStamp(w http.ResponseWriter, r *http.Request) {
 	tNow := time.Now()
+	trackInfo = dbTrack.GetAllTracks()
 	//Check if no tracks have been added.
 	if len(trackInfo) <= 0 {
 		errorHandler(w, http.StatusSeeOther, "No tracks have been added yet.")
@@ -291,6 +293,10 @@ func handlAPItickerStamp(w http.ResponseWriter, r *http.Request) {
 	for i := index + 1; i < len(trackInfo) && i < idCap+index+1; i++ {
 		ids = append(ids, trackInfo[i].UniqueID)
 		tStop = trackInfo[i].Timestamp
+	}
+	if tStop == 0 {
+		errorHandler(w, http.StatusBadRequest, "No new timestamps found.")
+		return
 	}
 	encoder := json.NewEncoder(w)
 
