@@ -241,11 +241,11 @@ func handlAPIticker(w http.ResponseWriter, r *http.Request) {
 	encoder := json.NewEncoder(w)
 
 	jsun := TickerData{
-		trackInfo[len(trackInfo)-1].Timestamp, //latest
-		trackInfo[0].Timestamp,                //earliest
-		tStop,                                 //last of ids
-		ids,                                   //slice of UniqueID
-		time.Since(tNow).Nanoseconds(),        //request time
+		trackInfo[len(trackInfo)-1].Timestamp,    //latest
+		trackInfo[0].Timestamp,                   //earliest
+		tStop,                                    //last of ids
+		ids,                                      //slice of UniqueID
+		time.Since(tNow).Nanoseconds() / 1000000, //request time in ms
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -301,11 +301,11 @@ func handlAPItickerStamp(w http.ResponseWriter, r *http.Request) {
 	encoder := json.NewEncoder(w)
 
 	jsun := TickerData{
-		trackInfo[len(trackInfo)-1].Timestamp, //latest
-		trackInfo[0].Timestamp,                //earliest
-		tStop,                                 //last of ids
-		ids,                                   //slice of UniqueID
-		time.Since(tNow).Nanoseconds(),        //request time
+		trackInfo[len(trackInfo)-1].Timestamp,    //latest
+		trackInfo[0].Timestamp,                   //earliest
+		tStop,                                    //last of ids
+		ids,                                      //slice of UniqueID
+		time.Since(tNow).Nanoseconds() / 1000000, //request time in ms
 	}
 
 	//write json data to body

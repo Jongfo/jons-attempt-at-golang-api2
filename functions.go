@@ -137,7 +137,7 @@ func clockticker() {
 		lastTrackStamp = 0
 	}
 
-	ticker := time.NewTicker(30 * time.Second)
+	ticker := time.NewTicker(10 * time.Minute)
 	quit := make(chan struct{})
 	go func() {
 		for {
