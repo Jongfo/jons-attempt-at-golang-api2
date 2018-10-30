@@ -10,10 +10,10 @@ All webhooks use slack format. You can use discord webhooks by appending `/slack
 
 No trailing slashes!
 ## Paths
-`GET    /paragliding/api` 
+* `GET    /paragliding/api` 
 Returns json with metat data about the API.
 
-`POST   /paragliding/api/track`
+* `POST   /paragliding/api/track`
 Takes a json with a url to a igc file and registers it. Retuns a json with a unique ID based on the igc file body.
 POST Template:
 ```
@@ -24,22 +24,22 @@ Response:
 "id": "<id>"
 ```
 
-`POST   /paragliding/api/track`
+* `POST   /paragliding/api/track`
 returns json array with all registered IDs.
 ```
 [<id1>, <id2>, ...]
 ```
 
-`GET    /paragliding/api/track/<id>`
+* `GET    /paragliding/api/track/<id>`
 Replace `<id>` with the text of a track ID to see meta information about this track. Displayed in application/json format.
 
-`GET    /paragliding/api/track/<id>/<field>`
+* `GET    /paragliding/api/track/<id>/<field>`
 Same as previous, exept that you only get the information about a spesific field in plain text.
 
-`GET    /paragliding/api/ticker/latest`
+* `GET    /paragliding/api/ticker/latest`
 retuns the timestamp of the latest track in plain text.
 
-`GET    /paragliding/api/ticker`
+* `GET    /paragliding/api/ticker`
 returns a json struct with some timestamps and the 5(by default) first track IDs. 
 ```
 {
@@ -52,10 +52,10 @@ returns a json struct with some timestamps and the 5(by default) first track IDs
 
 ```
 
-`GET    /paragliding/api/ticker/<timestamp>`
+* `GET    /paragliding/api/ticker/<timestamp>`
 Returns a json struct similar to above. Exept the returned tracks are after the given timestamp. Will return an error if no new tracks are found. 
 
-`POST   /paragliding/api/webhook/new_track`
+* `POST   /paragliding/api/webhook/new_track`
 Registers a webhook for notification about new tracks being added to the system. `webhookURL` expects a slack webhook. `minTriggerValue` is optional and defaults to 1.
 Responds with code 201 if sccuessful.
 Returns an ID for the webhook as plain text.
@@ -66,16 +66,23 @@ Returns an ID for the webhook as plain text.
 }
 ```
 
-`GET    /paragliding/api/webhook/new_track/<webhook_id>`
+* `GET    /paragliding/api/webhook/new_track/<webhook_id>`
 Returns the contents of a saved webhook as it was registered in the above step.
 
-`DELETE /paragliding/api/webhook/new_track/<webhook_id>`
+* `DELETE /paragliding/api/webhook/new_track/<webhook_id>`
 Does the same as above and deletes the registered webhook.
 
 
 ## Admin API:
-`GET    /admin/api/tracks_count`
-`DELETE /admin/api/tracks`
+* `GET    /admin/api/tracks_count`
+Displays the amount of tracks saved locally and in the database.
+* `DELETE /admin/api/tracks`
+Deletes all the tracks saved locally and in the database
+* `GET    /admin/api/webhooks_count`
+Displays the amount of webhooks saved locally and in the database.
+* `DELETE /admin/api/webhooks`
+Deletes all the webhooks saved locally and in the database
+
 
 
 ## Heroku link
